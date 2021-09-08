@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template with a lambda an ec2 and a security group with public access to ssh
+
+Parameters:
+  S3Bucket:
+    Type: String
+    Default: replace with s3 bucket with lambda zip code
+  KeyPair:
+    Type: String
+    Default: replace with key pair access key name without .pem
+  VPCID:
+    Type: String
+    Description: Public vpc id
+    Default: replace with public vpc id
+  AMI:
+    Type: String
+    Default: ami-087c17d1fe0178315
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId:
+        Ref: "AMI"
+      InstanceType:
+        Ref: "InstanceType"
+      KeyName:
+        Ref: "KeyPair"
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: "AllowPublicSSH"
+      Tags:
+        - Key: Name
+          Value: ec2_cloudformation
+        - Key: ShutdownCloudformation
+          Value: true
+  AllowPublicSSH:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow public ssh
+      VpcId:
+        Ref: VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  LambdaTurnOnOffEC2:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs14.x
+      Timeout: 5
+      FunctionName: ec2-state-manager-cloudformation
+      Environment:
+        Variables:
+          TAG_FILTER: "ShutdownCloudformation"
+          REGION: "us-east-1"
+          SHUTDOWN: true
+      Role: !GetAtt LambdaRoleCloudformation.Arn
+      Handler: index.handler
+      Description: Lambda to turn on or off EC2 instances according to time (7 a.m. turn on and 7 p.m. turn off)
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: lambda.zip
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "ScheduledRule to 7 a.m. and 7 p.m. (GMT-3)"
+      ScheduleExpression: "cron(0 11/10 * * ? *)"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt LambdaTurnOnOffEC2.Arn
+          Id: "LambdaTurnOnOffEC2Target"
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref "LambdaTurnOnOffEC2"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - "ScheduledRule"
+          - "Arn"
+  LambdaRoleCloudformation:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: StartStopEC2InstancesCloudFormation
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                Resource: "*"
+        - PolicyName: CloudwatchLoggingCloudFormation
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+Outputs:
+  PublicEC2IP:
+    Description: Public EC2 IP
+    Value: !GetAtt EC2Instance.PublicIp
+  PublicEC2DNS:
+    Description: Public EC2 IP
+    Value: !GetAtt EC2Instance.PublicDnsName

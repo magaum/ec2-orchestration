@@ -1,0 +1,35 @@
+{
+  "name": "@magaum/ec2-orchestration",
+  "version": "1.0.0",
+  "description": "Lambda function to turn on and off acording to time schedulled",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --collectCoverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/magaum/ec2-orchestration.git"
+  },
+  "keywords": [
+    "lambda",
+    "ec2",
+    "terraform",
+    "cloudformation"
+  ],
+  "author": "weslei.paula@fatec.sp.gov.br",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/magaum/ec2-orchestration/issues"
+  },
+  "homepage": "https://github.com/magaum/ec2-orchestration#readme",
+  "devDependencies": {
+    "aws-sdk-client-mock": "^0.5.3",
+    "jest": "^27.1.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.29.0"
+  }
+}
