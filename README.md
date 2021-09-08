@@ -32,7 +32,7 @@ terraform destroy
 Uma dependência para a execução do template cloudformation é a criação de um bucket previamente. O lambda precisa de um local para ser armazenado e esta dependência não pode ser criada junto com o restante da infraestrutura (aparentemente é uma limitação do cloudformation). Portanto um bucket precisa ser criado e seu nome deverá ser adicionado no arquivo [parameters.json](src/infra/cloudformation/parameters.json).
 
 ```
-aws cloudformation create-stack --stack-name ec2-stack --template-body file://template.yml --parameters file://parameters.json --capabilities CAPABILITY_IAM --on-failure DELETE
+aws cloudformation create-stack --stack-name ec2-stack --template-body file://template.yml --parameters file://parameters.json --capabilities CAPABILITY_IAM
 ```
 
 A stack pode ser removida com o comando delete-stack:
