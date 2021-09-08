@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "S3Bucket",
+        "ParameterValue": "nome-buket-exemplo"
+    },
+    {
+        "ParameterKey": "KeyPair",
+        "ParameterValue": "exemplo-key-pair-ec2"
+    },
+    {
+        "ParameterKey": "VPCID",
+        "ParameterValue": "vpc-default-123-exemplo"
+    }
+]
